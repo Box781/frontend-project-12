@@ -4,10 +4,12 @@ import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap'
+import { useTranslation } from 'react-i18next'
 import { setData } from '../slices/authSlice'
 import Header from '../Components/Header.jsx'
 
 const LoginPage = () => {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
   const [authFailed, setAuthFailed] = useState(false)
   const navigate = useNavigate()
@@ -39,11 +41,11 @@ const LoginPage = () => {
             <Card className="shadow-sm border-0">
               <Card.Body className="p-4">
                 <Card.Title as="h1" className="h4 mb-4 text-center">
-                  Войти
+                  {t('login.title')}
                 </Card.Title>
                 <Form onSubmit={formik.handleSubmit}>
                   <Form.Group className="mb-3" controlId="username">
-                    <Form.Label>Имя пользователя</Form.Label>
+                    <Form.Label>{t('login.username')}</Form.Label>
                     <Form.Control
                       name="username"
                       type="text"
@@ -55,7 +57,7 @@ const LoginPage = () => {
                     />
                   </Form.Group>
                   <Form.Group className="mb-3" controlId="password">
-                    <Form.Label>Пароль</Form.Label>
+                    <Form.Label>{t('login.password')}</Form.Label>
                     <Form.Control
                       name="password"
                       type="password"
@@ -65,18 +67,18 @@ const LoginPage = () => {
                       isInvalid={authFailed}
                     />
                     <Form.Control.Feedback type="invalid">
-                      Неверные имя пользователя или пароль
+                      {t('login.authFailed')}
                     </Form.Control.Feedback>
                   </Form.Group>
                   <Button type="submit" variant="primary" className="w-100">
-                    Войти
+                    {t('login.submit')}
                   </Button>
                 </Form>
               </Card.Body>
               <Card.Footer className="text-center bg-white py-3">
-                Нет аккаунта?
+                {t('login.noAccount')}
                 {' '}
-                <Link to="/signup">Регистрация</Link>
+                <Link to="/signup">{t('login.signupLink')}</Link>
               </Card.Footer>
             </Card>
           </Col>

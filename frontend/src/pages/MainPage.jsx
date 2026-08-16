@@ -6,9 +6,11 @@ import { Container, Row, Col, ListGroup, Form, Button, Navbar, Modal, Dropdown, 
 import { io } from 'socket.io-client'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import Header from '../Components/Header.jsx'
 
 const MainPage = () => {
+    const { t } = useTranslation()
     const queryClient = useQueryClient()
     const token = useSelector((state) => state.auth.token)
     const username = useSelector((state) => state.auth.username)
@@ -81,7 +83,7 @@ const MainPage = () => {
         mutationFn: (body) => {
             return axios.post('/api/v1/messages', { body, channelId: currentChannelId, username }, { headers: { Authorization: `Bearer ${token}` } })
         },
-        onError: () => setSubmitError('Не удалось отправить сообщение. Проверьте соединение.'),
+        onError: () => setSubmitError(t('chat.networkError')),
     })
 
     useEffect(() => {
@@ -152,7 +154,7 @@ const MainPage = () => {
                 <Row className="h-100">
                     <Col md={3} className="border-end bg-light p-3 overflow-auto">
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                            <b>Каналы</b>
+                            <b>{t('channels')}</b>
                             <Button
                                 type="button"
                                 variant="outline-primary"
@@ -185,12 +187,12 @@ const MainPage = () => {
                                                 <Dropdown.Item
                                                     onClick={() => openModal('rename', channel.id)}
                                                 >
-                                                    Переименовать
+                                                    {t('chat.rename')}
                                                 </Dropdown.Item>
                                                 <Dropdown.Item
                                                     onClick={() => openModal('remove', channel.id)}
                                                 >
-                                                    Удалить
+                                                    {t('chat.remove')}
                                                 </Dropdown.Item>
                                             </Dropdown.Menu>
                                         </Dropdown>
@@ -229,12 +231,12 @@ const MainPage = () => {
                                     <Form.Control
                                         name="body"
                                         type="text"
-                                        placeholder="Введите сообщение..."
-                                        aria-label="Новое сообщение"
+                                        placeholder={t('chat.messagePlaceholder')}
+                                        aria-label={t('chat.messageAria')}
                                         disabled={isPending}
                                     />
                                     <Button type="submit" variant="primary" disabled={isPending}>
-                                        Отправить
+                                        {t('send')}
                                     </Button>
                                 </div>
                                 {submitError && <div className="text-danger mt-2">{submitError}</div>}
@@ -245,7 +247,7 @@ const MainPage = () => {
             </Container>
             <Modal show={modalType === 'add'} onHide={closeModal} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Добавить канал</Modal.Title>
+                    <Modal.Title>{t('modals.addChannel')}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form
@@ -256,13 +258,13 @@ const MainPage = () => {
                         <Form.Control
                             autoFocus
                             {...register('name', {
-                                required: 'Обязательное поле',
-                                minLength: { value: 3, message: 'Минимум 3 символа' },
-                                maxLength: { value: 20, message: 'Максимум 20 символов' },
+                                required: t('modals.channelNameRequired'),
+                                minLength: { value: 3, message: t('modals.channelNameMin') },
+                                maxLength: { value: 20, message: t('modals.channelNameMax') },
                                 validate: (value) =>
                                     !channels.some(
                                         (ch) => ch.name.toLowerCase() === value.trim().toLowerCase(),
-                                    ) || 'Канал с таким именем уже существует',
+                                    ) || t('modals.channelNameUnique'),
                             })}
                             isInvalid={!!errors.name}
                         />
@@ -271,10 +273,10 @@ const MainPage = () => {
                         </Form.Control.Feedback>
                         <div className="d-flex justify-content-end gap-2 mt-3">
                             <Button type="button" variant="secondary" onClick={closeModal}>
-                                Отменить
+                                {t('cancel')}
                             </Button>
                             <Button type="submit" variant="primary" disabled={isAddPending}>
-                                Отправить
+                                {t('send')}
                             </Button>
                         </div>
                     </Form>
@@ -282,23 +284,23 @@ const MainPage = () => {
             </Modal>
             <Modal show={modalType === 'remove'} onHide={closeModal} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Удалить канал</Modal.Title>
+                    <Modal.Title>{t('modals.removeChannel')}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Вы уверены?</Modal.Body>
+                <Modal.Body>{t('modals.removeConfirm')}</Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={closeModal}>Отменить</Button>
+                    <Button variant="secondary" onClick={closeModal}>{t('cancel')}</Button>
                     <Button
                         variant="danger"
                         disabled={isRemovePending}
                         onClick={() => removeChannel()}
                     >
-                        Удалить
+                        {t('modals.removeButton')}
                     </Button>
                 </Modal.Footer>
             </Modal>
             <Modal show={modalType === 'rename'} onHide={() => { closeModal(); reset() }} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Переименовать канал</Modal.Title>
+                    <Modal.Title>{t('modals.renameChannel')}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form
@@ -309,17 +311,17 @@ const MainPage = () => {
                         <Form.Control
                             autoFocus
                             {...register('name', {
-                                required: 'Обязательное поле',
-                                minLength: { value: 3, message: 'Минимум 3 символа' },
-                                maxLength: { value: 20, message: 'Максимум 20 символов' },
+                                required: t('modals.channelNameRequired'),
+                                minLength: { value: 3, message: t('modals.channelNameMin') },
+                                maxLength: { value: 20, message: t('modals.channelNameMax') },
                                 validate: (value) => {
                                     const name = value.trim().toLowerCase()
                                     const taken = channels.some(
                                         (ch) =>
                                             ch.name.toLowerCase() === name
-                                            && ch.id !== channelIdToManage // своё старое имя — ок
+                                            && ch.id !== channelIdToManage
                                     )
-                                    return !taken || 'Канал с таким именем уже существует'
+                                    return !taken || t('modals.channelNameUnique')
                                 },
                             })}
                             isInvalid={!!errors.name}
@@ -330,10 +332,10 @@ const MainPage = () => {
 
                         <div className="d-flex justify-content-end gap-2 mt-3">
                             <Button type="button" variant="secondary" onClick={() => { closeModal(); reset() }}>
-                                Отменить
+                                {t('cancel')}
                             </Button>
                             <Button type="submit" variant="primary" disabled={isRenamePending}>
-                                Отправить
+                                {t('send')}
                             </Button>
                         </div>
                     </Form>

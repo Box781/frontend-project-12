@@ -4,10 +4,12 @@ import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap'
+import { useTranslation } from 'react-i18next'
 import Header from '../Components/Header.jsx'
 import { setData } from '../slices/authSlice'
 
 const SignUpPage = () => {
+  const { t } = useTranslation()
   const [nameFailed, setNameFailed] = useState(false)
   const [passwordFailed, setPasswordFailed] = useState(false)
   const [confirmFailed, setConfirmFailed] = useState(false)
@@ -65,11 +67,11 @@ const SignUpPage = () => {
             <Card className="shadow-sm border-0">
               <Card.Body className="p-4">
                 <Card.Title as="h1" className="h4 mb-4 text-center">
-                  Регистрация
+                  {t('signup.title')}
                 </Card.Title>
                 <Form onSubmit={formik.handleSubmit}>
                   <Form.Group className="mb-3" controlId="username">
-                    <Form.Label>Имя пользователя</Form.Label>
+                    <Form.Label>{t('signup.username')}</Form.Label>
                     <Form.Control
                       name="username"
                       type="text"
@@ -80,11 +82,11 @@ const SignUpPage = () => {
                       isInvalid={nameFailed}
                     />
                     <Form.Control.Feedback type="invalid">
-                      Имя: от 3 до 20 символов, или такое имя уже занято
+                      {t('signup.usernameError')}
                     </Form.Control.Feedback>
                   </Form.Group>
                   <Form.Group className="mb-3" controlId="password">
-                    <Form.Label>Пароль</Form.Label>
+                    <Form.Label>{t('signup.password')}</Form.Label>
                     <Form.Control
                       name="password"
                       type="password"
@@ -94,11 +96,11 @@ const SignUpPage = () => {
                       isInvalid={passwordFailed}
                     />
                     <Form.Control.Feedback type="invalid">
-                      Пароль: обязательно, не менее 6 символов
+                      {t('signup.passwordError')}
                     </Form.Control.Feedback>
                   </Form.Group>
                   <Form.Group className="mb-3" controlId="confirmPassword">
-                    <Form.Label>Подтвердите пароль</Form.Label>
+                    <Form.Label>{t('signup.confirmPassword')}</Form.Label>
                     <Form.Control
                       name="confirmPassword"
                       type="password"
@@ -108,18 +110,18 @@ const SignUpPage = () => {
                       isInvalid={confirmFailed}
                     />
                     <Form.Control.Feedback type="invalid">
-                      Пароли не совпадают
+                      {t('signup.confirmError')}
                     </Form.Control.Feedback>
                   </Form.Group>
                   <Button type="submit" variant="primary" className="w-100">
-                    Зарегистрироваться
+                    {t('signup.submit')}
                   </Button>
                 </Form>
               </Card.Body>
               <Card.Footer className="text-center bg-white py-3">
-                Уже есть аккаунт?
+                {t('signup.haveAccount')}
                 {' '}
-                <Link to="/login">Войти</Link>
+                <Link to="/login">{t('signup.loginLink')}</Link>
               </Card.Footer>
             </Card>
           </Col>
