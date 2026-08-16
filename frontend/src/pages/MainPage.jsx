@@ -6,6 +6,7 @@ import { Container, Row, Col, ListGroup, Form, Button, Navbar, Modal, Dropdown, 
 import { io } from 'socket.io-client'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import Header from '../Components/Header.jsx'
 
 const MainPage = () => {
     const queryClient = useQueryClient()
@@ -145,9 +146,7 @@ const MainPage = () => {
 
     return (
         <div className="d-flex flex-column h-100">
-            <Navbar bg="light" className="border-bottom px-3">
-                <Navbar.Brand>Chat</Navbar.Brand>
-            </Navbar>
+            <Header />
 
             <Container fluid className="flex-grow-1 overflow-hidden">
                 <Row className="h-100">
