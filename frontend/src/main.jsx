@@ -13,6 +13,10 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
+import filter from 'leo-profanity'
+
+filter.clearList()
+filter.add(filter.getDictionary('ru'))
 
 const queryClient = new QueryClient()
 

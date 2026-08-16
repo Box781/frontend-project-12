@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import Header from '../Components/Header.jsx'
 import { notifications } from '@mantine/notifications'
+import filter from 'leo-profanity'
 
 const MainPage = () => {
     const { t } = useTranslation()
@@ -46,12 +47,13 @@ const MainPage = () => {
     const { register, handleSubmit, reset, formState: { errors }, setFocus } = useForm()
 
     const { mutate: addChannel, isPending: isAddPending } = useMutation({
-        mutationFn: (name) =>
-            axios.post(
+        mutationFn: (name) =>{
+            const cleanName = filter.clean(name.trim())
+            return axios.post(
                 '/api/v1/channels',
-                { name },
+                { name: cleanName },
                 { headers: { Authorization: `Bearer ${token}` } },
-            ),
+            )},
         onSuccess: (response) => {
             notifications.show({ message: t('toast.channelCreated'), color: 'green' })
             closeModal()
@@ -64,10 +66,10 @@ const MainPage = () => {
     })
 
     const { mutate: removeChannel, isPending: isRemovePending } = useMutation({
-        mutationFn: () =>
-            axios.delete(`/api/v1/channels/${channelIdToManage}`, {
+        mutationFn: () =>{
+            return axios.delete(`/api/v1/channels/${channelIdToManage}`, {
                 headers: { Authorization: `Bearer ${token}` },
-            }),
+            })},
         onSuccess: (response) => {
             notifications.show({ message: t('toast.channelRemoved'), color: 'red' })
             closeModal()
@@ -78,10 +80,11 @@ const MainPage = () => {
     })
 
     const { mutate: renameChannel, isPending: isRenamePending } = useMutation({
-        mutationFn: (name) =>
-            axios.patch(`/api/v1/channels/${channelIdToManage}`, { name }, {
+        mutationFn: (name) =>{
+            const cleanName = filter.clean(name.trim())
+            return axios.patch(`/api/v1/channels/${channelIdToManage}`, { name: cleanName }, {
                 headers: { Authorization: `Bearer ${token}` },
-            }),
+            })},
         onSuccess: (response) => {
             notifications.show({ message: t('toast.channelRenamed'), color: 'green' })
             closeModal()
@@ -94,7 +97,8 @@ const MainPage = () => {
 
     const { mutate, isPending } = useMutation({
         mutationFn: (body) => {
-            return axios.post('/api/v1/messages', { body, channelId: currentChannelId, username }, { headers: { Authorization: `Bearer ${token}` } })
+            const cleanBody = filter.clean(body)
+            return axios.post('/api/v1/messages', { body: cleanBody, channelId: currentChannelId, username }, { headers: { Authorization: `Bearer ${token}` } })
         },
         onError: () => {
             setSubmitError(t('chat.networkError'))
