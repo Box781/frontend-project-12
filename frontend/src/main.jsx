@@ -14,6 +14,14 @@ import '@mantine/notifications/styles.css'
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import filter from 'leo-profanity'
+import * as Sentry from '@sentry/react'
+
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+  })
+}
+
 
 filter.clearList()
 filter.add(filter.getDictionary('ru'))
