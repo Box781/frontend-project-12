@@ -8,6 +8,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import Header from '../Components/Header.jsx'
+import { notifications } from '@mantine/notifications'
 
 const MainPage = () => {
     const { t } = useTranslation()
@@ -15,7 +16,7 @@ const MainPage = () => {
     const token = useSelector((state) => state.auth.token)
     const username = useSelector((state) => state.auth.username)
 
-    const { data: channels = [] } = useQuery({
+    const { data: channels = [], isError: isChannelsError } = useQuery({
         queryKey: ['channels'],
         queryFn: async () => {
             const response = await axios.get('/api/v1/channels', {
@@ -25,7 +26,7 @@ const MainPage = () => {
         }
     })
 
-    const { data: messages = [] } = useQuery({
+    const { data: messages = [], isError: isMessagesError } = useQuery({
         queryKey: ['messages'],
         queryFn: async () => {
             const response = await axios.get('/api/v1/messages', {
@@ -52,10 +53,14 @@ const MainPage = () => {
                 { headers: { Authorization: `Bearer ${token}` } },
             ),
         onSuccess: (response) => {
+            notifications.show({ message: t('toast.channelCreated'), color: 'green' })
             closeModal()
             reset()
             setCurrentChannelId(response.data.id) // перейти в новый канал
         },
+        onError: () => {
+            notifications.show({ message: t('toast.networkError'), color: 'red' })
+        }
     })
 
     const { mutate: removeChannel, isPending: isRemovePending } = useMutation({
@@ -64,8 +69,12 @@ const MainPage = () => {
                 headers: { Authorization: `Bearer ${token}` },
             }),
         onSuccess: (response) => {
+            notifications.show({ message: t('toast.channelRemoved'), color: 'red' })
             closeModal()
         },
+        onError: () => {
+            notifications.show({ message: t('toast.networkError'), color: 'green' })
+        }
     })
 
     const { mutate: renameChannel, isPending: isRenamePending } = useMutation({
@@ -74,17 +83,33 @@ const MainPage = () => {
                 headers: { Authorization: `Bearer ${token}` },
             }),
         onSuccess: (response) => {
+            notifications.show({ message: t('toast.channelRenamed'), color: 'green' })
             closeModal()
             reset()
         },
+        onError: () => {
+            notifications.show({ message: t('toast.networkError'), color: 'red' })
+        }
     })
 
     const { mutate, isPending } = useMutation({
         mutationFn: (body) => {
             return axios.post('/api/v1/messages', { body, channelId: currentChannelId, username }, { headers: { Authorization: `Bearer ${token}` } })
         },
-        onError: () => setSubmitError(t('chat.networkError')),
+        onError: () => {
+            setSubmitError(t('chat.networkError'))
+            notifications.show({ message: t('toast.networkError'), color: 'red' })
+        }
     })
+
+    useEffect(() => {
+        if (isChannelsError || isMessagesError) {
+            notifications.show({
+                message: t('toast.networkError'),
+                color: 'red',
+            })
+        }
+    }, [isChannelsError, isMessagesError, t])
 
     useEffect(() => {
         const socket = io()

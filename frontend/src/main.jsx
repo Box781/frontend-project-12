@@ -9,19 +9,26 @@ import store from './store.js'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from './i18n.js'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import '@mantine/core/styles.css'
+import '@mantine/notifications/styles.css'
+import { MantineProvider } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
 
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')).render(
   <I18nextProvider i18n={i18n}>
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
-        <StrictMode>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </StrictMode>
-      </Provider>
-    </QueryClientProvider>
+    <MantineProvider>
+      <Notifications />
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <StrictMode>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </StrictMode>
+        </Provider>
+      </QueryClientProvider>
+    </MantineProvider>
   </I18nextProvider>,
 )

@@ -49,6 +49,12 @@ const ru = {
       channelNameMax: 'Максимум 20 символов',
       channelNameUnique: 'Канал с таким именем уже существует',
     },
+    toast: {
+      networkError: 'Ошибка сети или загрузки данных',
+      channelCreated: 'Канал создан',
+      channelRenamed: 'Канал переименован',
+      channelRemoved: 'Канал удалён',
+    },
   },
 }
 

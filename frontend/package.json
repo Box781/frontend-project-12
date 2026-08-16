@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mantine/core": "^9.5.1",
+    "@mantine/hooks": "^9.5.1",
+    "@mantine/notifications": "^9.5.1",
     "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-query": "^5.101.4",
     "axios": "^1.19.0",
