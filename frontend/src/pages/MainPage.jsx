@@ -219,23 +219,23 @@ const MainPage = () => {
                       # {channel.name}
                     </Button>
                     {channel.removable && (
-                      <>
-                        <Dropdown.Toggle
-                          split
-                          variant={channel.id === currentChannelId ? 'secondary' : 'light'}
-                          id={`channel-menu-${channel.id}`}
-                        >
-                          <span className="visually-hidden">{t('chat.manageChannel')}</span>
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => openModal('rename', channel.id)}>
-                            {t('chat.rename')}
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => openModal('remove', channel.id)}>
-                            {t('chat.remove')}
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </>
+                      <Dropdown.Toggle
+                        split
+                        variant={channel.id === currentChannelId ? 'secondary' : 'light'}
+                        id={`channel-menu-${channel.id}`}
+                      >
+                        <span className="visually-hidden">{t('chat.manageChannel')}</span>
+                      </Dropdown.Toggle>
+                    )}
+                    {channel.removable && (
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => openModal('rename', channel.id)}>
+                          {t('chat.rename')}
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => openModal('remove', channel.id)}>
+                          {t('chat.remove')}
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
                     )}
                   </Dropdown>
                 </ListGroup.Item>
