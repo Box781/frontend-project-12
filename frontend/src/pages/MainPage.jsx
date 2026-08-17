@@ -229,10 +229,10 @@ const MainPage = () => {
                     )}
                     {channel.removable && (
                       <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => openModal('rename', channel.id)}>
+                        <Dropdown.Item role="menuitem" onClick={() => openModal('rename', channel.id)}>
                           {t('chat.rename')}
                         </Dropdown.Item>
-                        <Dropdown.Item onClick={() => openModal('remove', channel.id)}>
+                        <Dropdown.Item role="menuitem" onClick={() => openModal('remove', channel.id)}>
                           {t('chat.remove')}
                         </Dropdown.Item>
                       </Dropdown.Menu>
