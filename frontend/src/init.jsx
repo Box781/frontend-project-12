@@ -28,6 +28,7 @@ const init = async (socket) => {
   }
 
   filter.clearList()
+  filter.add(filter.getDictionary('en'))
   filter.add(filter.getDictionary('ru'))
 
   const i18n = i18next.createInstance()

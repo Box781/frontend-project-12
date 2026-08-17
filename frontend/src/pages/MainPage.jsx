@@ -208,45 +208,43 @@ const MainPage = () => {
             </div>
             <ListGroup variant="flush">
               {channels.map((channel) => (
-                <ListGroup.Item
-                  key={channel.id}
-                  className="d-flex justify-content-between align-items-center"
-                  active={channel.id === currentChannelId}
-                >
-                  <button
-                    type="button"
-                    className={`btn btn-link text-decoration-none p-0 text-start text-truncate ${channel.id === currentChannelId ? 'link-light' : ''}`}
-                    onClick={() => setCurrentChannelId(channel.id)}
-                  >
-                    # {channel.name}
-                  </button>
-
-                  {channel.removable && (
-                    <Dropdown as={ButtonGroup} onClick={(e) => e.stopPropagation()}>
-                      <Dropdown.Toggle
-                        split
-                        variant="light"
-                        size="sm"
-                        id={`channel-menu-${channel.id}`}
-                        aria-label={t('chat.manageChannel')}
-                      />
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => openModal('rename', channel.id)}>
-                          {t('chat.rename')}
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => openModal('remove', channel.id)}>
-                          {t('chat.remove')}
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  )}
+                <ListGroup.Item key={channel.id} className="p-0 border-0">
+                  <Dropdown as={ButtonGroup} className="d-flex w-100">
+                    <Button
+                      type="button"
+                      variant={channel.id === currentChannelId ? 'secondary' : 'light'}
+                      className="w-100 text-start text-truncate"
+                      onClick={() => setCurrentChannelId(channel.id)}
+                    >
+                      # {channel.name}
+                    </Button>
+                    {channel.removable && (
+                      <>
+                        <Dropdown.Toggle
+                          split
+                          variant={channel.id === currentChannelId ? 'secondary' : 'light'}
+                          id={`channel-menu-${channel.id}`}
+                        >
+                          <span className="visually-hidden">{t('chat.manageChannel')}</span>
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => openModal('rename', channel.id)}>
+                            {t('chat.rename')}
+                          </Dropdown.Item>
+                          <Dropdown.Item onClick={() => openModal('remove', channel.id)}>
+                            {t('chat.remove')}
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </>
+                    )}
+                  </Dropdown>
                 </ListGroup.Item>
               ))}
             </ListGroup>
           </Col>
           <Col md={9} className="d-flex flex-column h-100 p-0">
             <div className="border-bottom px-3 py-2 bg-white">
-              <b># {currentChannel?.name}</b>
+              <b>{currentChannel?.name}</b>
             </div>
             <div className="flex-grow-1 overflow-auto px-3 py-2">
               {channelMessages.map((message) => (
