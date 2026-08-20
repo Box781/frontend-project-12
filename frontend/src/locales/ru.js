@@ -6,6 +6,7 @@ const ru = {
     cancel: 'Отменить',
     send: 'Отправить',
     notFound: 'Страница не найдена',
+    toMain: 'На главную',
 
     login: {
       title: 'Войти',

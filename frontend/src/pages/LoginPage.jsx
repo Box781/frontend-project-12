@@ -1,35 +1,38 @@
 import React, { useState } from 'react'
 import { useFormik } from 'formik'
-import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap'
 import { useTranslation } from 'react-i18next'
 import { setData } from '../slices/authSlice'
 import Header from '../Components/Header.jsx'
+import { login } from '../api/auth.js'
 
 const LoginPage = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [authFailed, setAuthFailed] = useState(false)
   const navigate = useNavigate()
+
+  const handleSubmit = async (values) => {
+    setAuthFailed(false)
+    try {
+      const data = await login(values)
+      dispatch(setData({ token: data.token, username: data.username }))
+      navigate('/')
+    } catch (error) {
+      if (error.response?.status === 401) {
+        setAuthFailed(true)
+      }
+    }
+  }
+  
   const formik = useFormik({
     initialValues: {
       username: '',
       password: '',
     },
-    onSubmit: async (values) => {
-      setAuthFailed(false)
-      try {
-        const { data } = await axios.post('/api/v1/login', values)
-        dispatch(setData({ token: data.token, username: data.username }))
-        navigate('/')
-      } catch (error) {
-        if (error.response?.status === 401) {
-          setAuthFailed(true)
-        }
-      }
-    },
+    onSubmit: handleSubmit
   })
 
   return (

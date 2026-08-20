@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import axios from 'axios'
 import useZustandStore, { useUiStoreApi } from '../zustandStore'
-import { Container, Row, Col, ListGroup, Form, Button, Modal, Dropdown, ButtonGroup } from 'react-bootstrap'
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { Container, Row, Col, ListGroup, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import Header from '../Components/Header.jsx'
+import ModalWindow from '../Components/ModalWindow.jsx'
 import { notifications } from '@mantine/notifications'
 import filter from 'leo-profanity'
 import { useSocket } from '../contexts/SocketContext.jsx'
+import {
+  useChannels,
+  useAddChannel,
+  useRenameChannel,
+  useRemoveChannel,
+} from '../hooks/useChannels.js'
+import { useMessages, useSendMessage } from '../hooks/useMessages.js'
 
 const MainPage = () => {
   const { t } = useTranslation()
@@ -18,27 +25,12 @@ const MainPage = () => {
   const uiStore = useUiStoreApi()
   const token = useSelector((state) => state.auth.token)
   const username = useSelector((state) => state.auth.username)
-
-  const { data: channels = [], isError: isChannelsError } = useQuery({
-    queryKey: ['channels'],
-    queryFn: async () => {
-      const response = await axios.get('/api/v1/channels', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      return response.data
-    },
-  })
-
-  const { data: messages = [], isError: isMessagesError } = useQuery({
-    queryKey: ['messages'],
-    queryFn: async () => {
-      const response = await axios.get('/api/v1/messages', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      return response.data
-    },
-  })
-
+  const { data: channels = [], isError: isChannelsError } = useChannels(token)
+  const { data: messages = [], isError: isMessagesError } = useMessages(token)
+  const { mutate: addChannel, isPending: isAddPending } = useAddChannel(token)
+  const { mutate: renameChannel, isPending: isRenamePending } = useRenameChannel(token)
+  const { mutate: removeChannel, isPending: isRemovePending } = useRemoveChannel(token)
+  const { mutate: sendMessage, isPending } = useSendMessage(token)
   const currentChannelId = useZustandStore((s) => s.currentChannelId)
   const setCurrentChannelId = useZustandStore((s) => s.setCurrentChannelId)
   const modalType = useZustandStore((s) => s.modalType)
@@ -47,67 +39,67 @@ const MainPage = () => {
   const channelIdToManage = useZustandStore((s) => s.channelIdToManage)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
+  const [submitError, setSubmitError] = useState(null)
 
-  const { mutate: addChannel, isPending: isAddPending } = useMutation({
-    mutationFn: (name) => {
-      const cleanName = filter.clean(name.trim())
-      return axios.post(
-        '/api/v1/channels',
-        { name: cleanName },
-        { headers: { Authorization: `Bearer ${token}` } },
-      )
-    },
-    onSuccess: (response) => {
-      notifications.show({ message: t('toast.channelCreated'), color: 'green' })
-      closeModal()
-      reset()
-      setCurrentChannelId(response.data.id)
-    },
-    onError: () => {
-      notifications.show({ message: t('toast.networkError'), color: 'red' })
-    },
-  })
+  const handleAddChannel = (data) => {
+    addChannel(filter.clean(data.name.trim()), {
+      onSuccess: (channel) => {
+        notifications.show({ message: t('toast.channelCreated'), color: 'green' })
+        closeModal()
+        reset()
+        setCurrentChannelId(channel.id)
+      },
+      onError: () => {
+        notifications.show({ message: t('toast.networkError'), color: 'red' })
+      },
+    })
+  }
 
-  const { mutate: removeChannel, isPending: isRemovePending } = useMutation({
-    mutationFn: () => axios.delete(`/api/v1/channels/${channelIdToManage}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-    onSuccess: () => {
-      notifications.show({ message: t('toast.channelRemoved'), color: 'red' })
-      closeModal()
-    },
-    onError: () => {
-      notifications.show({ message: t('toast.networkError'), color: 'red' })
-    },
-  })
+  const handleRemoveChannelClick = () => {
+    removeChannel(channelIdToManage, {
+      onSuccess: () => {
+        notifications.show({ message: t('toast.channelRemoved'), color: 'red' })
+        closeModal()
+      },
+      onError: () => {
+        notifications.show({ message: t('toast.networkError'), color: 'red' })
+      },
+    })
+  }
 
-  const { mutate: renameChannel, isPending: isRenamePending } = useMutation({
-    mutationFn: (name) => {
-      const cleanName = filter.clean(name.trim())
-      return axios.patch(`/api/v1/channels/${channelIdToManage}`, { name: cleanName }, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    },
-    onSuccess: () => {
-      notifications.show({ message: t('toast.channelRenamed'), color: 'green' })
-      closeModal()
-      reset()
-    },
-    onError: () => {
-      notifications.show({ message: t('toast.networkError'), color: 'red' })
-    },
-  })
+  const handleRenameChannelSubmit = (data) => {
+    renameChannel(
+      { id: channelIdToManage, name: filter.clean(data.name.trim()) },
+      {
+        onSuccess: () => {
+          notifications.show({ message: t('toast.channelRenamed'), color: 'green' })
+          closeModal()
+          reset()
+        },
+        onError: () => {
+          notifications.show({ message: t('toast.networkError'), color: 'red' })
+        },
+      },
+    )
+  }
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (body) => {
-      const cleanBody = filter.clean(body)
-      return axios.post('/api/v1/messages', { body: cleanBody, channelId: currentChannelId, username }, { headers: { Authorization: `Bearer ${token}` } })
-    },
-    onError: () => {
-      setSubmitError(t('chat.networkError'))
-      notifications.show({ message: t('toast.networkError'), color: 'red' })
-    },
-  })
+  const handleSendMessage = (e) => {
+    e.preventDefault()
+    const form = e.target
+    const body = form.body.value.trim()
+    if (!body) return
+    setSubmitError(null)
+    sendMessage(
+      { body: filter.clean(body), channelId: currentChannelId, username },
+      {
+        onSuccess: () => form.reset(),
+        onError: () => {
+          setSubmitError(t('chat.networkError'))
+          notifications.show({ message: t('toast.networkError'), color: 'red' })
+        },
+      },
+    )
+  }
 
   useEffect(() => {
     if (isChannelsError || isMessagesError) {
@@ -176,8 +168,6 @@ const MainPage = () => {
       reset({ name: '' })
     }
   }, [modalType, channelIdToManage, channels, reset])
-
-  const [submitError, setSubmitError] = useState(null)
 
   const channelMessages = messages.filter((message) => message.channelId === currentChannelId)
   const currentChannel = channels.find((channel) => channel.id === currentChannelId)
@@ -256,18 +246,7 @@ const MainPage = () => {
               ))}
             </div>
             <div className="border-top p-3 mt-auto">
-              <Form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const form = e.target
-                  const body = form.body.value.trim()
-                  if (!body) return
-                  setSubmitError(null)
-                  mutate(body, {
-                    onSuccess: () => form.reset(),
-                  })
-                }}
-              >
+              <Form onSubmit={handleSendMessage}>
                 <div className="d-flex gap-2">
                   <Form.Control
                     name="body"
@@ -287,103 +266,97 @@ const MainPage = () => {
         </Row>
       </Container>
 
-      <Modal show={modalType === 'add'} onHide={closeModal} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('modals.addChannel')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form
-            onSubmit={handleSubmit((data) => {
-              addChannel(data.name.trim())
-            })}
-          >
-            <Form.Group className="mb-3" controlId="addChannelName">
-              <Form.Label>{t('modals.channelName')}</Form.Label>
-              <Form.Control
-                autoFocus
-                {...register('name', {
-                  ...channelNameRules,
-                  validate: (value) =>
-                    !channels.some(
-                      (ch) => ch.name.toLowerCase() === value.trim().toLowerCase(),
-                    ) || t('modals.channelNameUnique'),
-                })}
-                isInvalid={!!errors.name}
-              />
-              <Form.Control.Feedback type="invalid">
-                {errors.name?.message}
-              </Form.Control.Feedback>
-            </Form.Group>
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button type="button" variant="secondary" onClick={closeModal}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit" variant="primary" disabled={isAddPending}>
-                {t('send')}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+      <ModalWindow
+        show={modalType === 'add'}
+        title={t('modals.addChannel')}
+        onHide={closeModal}
+      >
+        <Form onSubmit={handleSubmit(handleAddChannel)}>
+          <Form.Group className="mb-3" controlId="addChannelName">
+            <Form.Label>{t('modals.channelName')}</Form.Label>
+            <Form.Control
+              autoFocus
+              {...register('name', {
+                ...channelNameRules,
+                validate: (value) =>
+                  !channels.some(
+                    (ch) => ch.name.toLowerCase() === value.trim().toLowerCase(),
+                  ) || t('modals.channelNameUnique'),
+              })}
+              isInvalid={!!errors.name}
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.name?.message}
+            </Form.Control.Feedback>
+          </Form.Group>
+          <div className="d-flex justify-content-end gap-2 mt-3">
+            <Button type="button" variant="secondary" onClick={closeModal}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit" variant="primary" disabled={isAddPending}>
+              {t('send')}
+            </Button>
+          </div>
+        </Form>
+      </ModalWindow>
 
-      <Modal show={modalType === 'remove'} onHide={closeModal} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('modals.removeChannel')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>{t('modals.removeConfirm')}</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={closeModal}>{t('cancel')}</Button>
+      <ModalWindow
+        show={modalType === 'remove'}
+        title={t('modals.removeChannel')}
+        onHide={closeModal}
+      >
+        <p className="mb-3">{t('modals.removeConfirm')}</p>
+        <div className="d-flex justify-content-end gap-2">
+          <Button type="button" variant="secondary" onClick={closeModal}>
+            {t('cancel')}
+          </Button>
           <Button
+            type="button"
             variant="danger"
             disabled={isRemovePending}
-            onClick={() => removeChannel()}
+            onClick={handleRemoveChannelClick}
           >
             {t('modals.removeButton')}
           </Button>
-        </Modal.Footer>
-      </Modal>
+        </div>
+      </ModalWindow>
 
-      <Modal show={modalType === 'rename'} onHide={() => { closeModal(); reset() }} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('modals.renameChannel')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form
-            onSubmit={handleSubmit((data) => {
-              renameChannel(data.name.trim())
-            })}
-          >
-            <Form.Group className="mb-3" controlId="renameChannelName">
-              <Form.Label>{t('modals.channelName')}</Form.Label>
-              <Form.Control
-                autoFocus
-                {...register('name', {
-                  ...channelNameRules,
-                  validate: (value) => {
-                    const name = value.trim().toLowerCase()
-                    const taken = channels.some(
-                      (ch) => ch.name.toLowerCase() === name && ch.id !== channelIdToManage,
-                    )
-                    return !taken || t('modals.channelNameUnique')
-                  },
-                })}
-                isInvalid={!!errors.name}
-              />
-              <Form.Control.Feedback type="invalid">
-                {errors.name?.message}
-              </Form.Control.Feedback>
-            </Form.Group>
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button type="button" variant="secondary" onClick={() => { closeModal(); reset() }}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit" variant="primary" disabled={isRenamePending}>
-                {t('send')}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+      <ModalWindow
+        show={modalType === 'rename'}
+        title={t('modals.renameChannel')}
+        onHide={() => { closeModal(); reset() }}
+      >
+        <Form onSubmit={handleSubmit(handleRenameChannelSubmit)}>
+          <Form.Group className="mb-3" controlId="renameChannelName">
+            <Form.Label>{t('modals.channelName')}</Form.Label>
+            <Form.Control
+              autoFocus
+              {...register('name', {
+                ...channelNameRules,
+                validate: (value) => {
+                  const name = value.trim().toLowerCase()
+                  const taken = channels.some(
+                    (ch) => ch.name.toLowerCase() === name && ch.id !== channelIdToManage,
+                  )
+                  return !taken || t('modals.channelNameUnique')
+                },
+              })}
+              isInvalid={!!errors.name}
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.name?.message}
+            </Form.Control.Feedback>
+          </Form.Group>
+          <div className="d-flex justify-content-end gap-2 mt-3">
+            <Button type="button" variant="secondary" onClick={() => { closeModal(); reset() }}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit" variant="primary" disabled={isRenamePending}>
+              {t('send')}
+            </Button>
+          </div>
+        </Form>
+      </ModalWindow>
     </div>
   )
 }

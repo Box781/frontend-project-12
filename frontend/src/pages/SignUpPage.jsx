@@ -1,21 +1,48 @@
 import React, { useState } from 'react'
 import { useFormik } from 'formik'
 import { useDispatch } from 'react-redux'
-import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap'
 import { useTranslation } from 'react-i18next'
 import Header from '../Components/Header.jsx'
 import { setData } from '../slices/authSlice'
+import * as yup from 'yup'
+import { signUp } from '../api/auth.js'
 
 const SignUpPage = () => {
     const { t } = useTranslation()
     const [nameFailed, setNameFailed] = useState(false)
-    const [nameLengthFailed, setNameLengthFailed] = useState(false)
-    const [passwordFailed, setPasswordFailed] = useState(false)
-    const [confirmFailed, setConfirmFailed] = useState(false)
     const dispatch = useDispatch()
     const navigate = useNavigate()
+
+    const signupSchema = yup.object({
+        username: yup
+            .string()
+            .min(3, t('signup.usernameLengthError'))
+            .max(20, t('signup.usernameLengthError'))
+            .required(t('signup.usernameLengthError')),
+        password: yup
+            .string()
+            .min(6, t('signup.passwordError'))
+            .required(t('signup.passwordError')),
+        confirmPassword: yup
+            .string()
+            .oneOf([yup.ref('password')], t('signup.confirmError'))
+            .required(t('signup.confirmError')),
+    })
+
+    const handleSubmit = async (values) => {
+        setNameFailed(false)
+        try {
+            const data = await signUp(values)
+            dispatch(setData({ token: data.token, username: data.username }))
+            navigate('/')
+        } catch (error) {
+            if (error.response?.status === 409) {
+                setNameFailed(true)
+            }
+        }
+    }
 
     const formik = useFormik({
         initialValues: {
@@ -23,41 +50,8 @@ const SignUpPage = () => {
             password: '',
             confirmPassword: '',
         },
-        onSubmit: async (values) => {
-            setNameFailed(false)
-            setPasswordFailed(false)
-            setConfirmFailed(false)
-            setNameLengthFailed(false)
-
-            const { username, password, confirmPassword } = values
-            let hasError = false
-            if (!username || username.length < 3 || username.length > 20) {
-                setNameLengthFailed(true)
-                hasError = true
-            }
-            if (!password || password.length < 6) {
-                setPasswordFailed(true)
-                hasError = true
-            }
-            if (!confirmPassword || password !== confirmPassword) {
-                setConfirmFailed(true)
-                hasError = true
-            }
-
-            if (hasError) return
-            try {
-                const { data } = await axios.post('/api/v1/signup', {
-                    username: values.username,
-                    password: values.password,
-                })
-                dispatch(setData({ token: data.token, username: data.username }))
-                navigate('/')
-            } catch (error) {
-                if (error.response?.status === 409) {
-                    setNameFailed(true)
-                }
-            }
-        },
+        validationSchema: signupSchema,
+        onSubmit: handleSubmit
     })
 
     return (
@@ -81,12 +75,10 @@ const SignUpPage = () => {
                                             autoFocus
                                             onChange={formik.handleChange}
                                             value={formik.values.username}
-                                            isInvalid={nameFailed || nameLengthFailed}
+                                            isInvalid={(formik.touched.username && !!formik.errors.username) || nameFailed}
                                         />
                                         <Form.Control.Feedback type="invalid">
-                                            {nameFailed
-                                                ? t('signup.usernameError')
-                                                : t('signup.usernameLengthError')}
+                                            {nameFailed ? t('signup.usernameError') : formik.errors.username}
                                         </Form.Control.Feedback>
                                     </Form.Group>
                                     <Form.Group className="mb-3" controlId="password">
@@ -97,10 +89,10 @@ const SignUpPage = () => {
                                             autoComplete="new-password"
                                             onChange={formik.handleChange}
                                             value={formik.values.password}
-                                            isInvalid={passwordFailed}
+                                            isInvalid={formik.touched.password && !!formik.errors.password}
                                         />
                                         <Form.Control.Feedback type="invalid">
-                                            {t('signup.passwordError')}
+                                            {formik.errors.password}
                                         </Form.Control.Feedback>
                                     </Form.Group>
                                     <Form.Group className="mb-3" controlId="confirmPassword">
@@ -111,10 +103,10 @@ const SignUpPage = () => {
                                             autoComplete="new-password"
                                             onChange={formik.handleChange}
                                             value={formik.values.confirmPassword}
-                                            isInvalid={confirmFailed}
+                                            isInvalid={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
                                         />
                                         <Form.Control.Feedback type="invalid">
-                                            {t('signup.confirmError')}
+                                            {formik.errors.confirmPassword}
                                         </Form.Control.Feedback>
                                     </Form.Group>
                                     <Button type="submit" variant="primary" className="w-100">
